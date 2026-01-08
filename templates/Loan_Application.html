@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự Đoán Khoản Vay - Student Project</title>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px; /* Mở rộng chiều ngang để chứa 2 cột */
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        /* --- LAYOUT CHÍNH: CHIA 2 CỘT --- */
+        .main-layout {
+            display: flex; /* Kích hoạt chế độ chia cột */
+            gap: 30px;     /* Khoảng cách giữa 2 cột */
+            align-items: flex-start; /* Căn hàng đầu tiên bằng nhau */
+        }
+
+        /* Cột bên trái: Chứa Form (Chiếm 65%) */
+        .left-column {
+            flex: 65%;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        /* Cột bên phải: Chứa Kết quả (Chiếm 35%) */
+        .right-column {
+            flex: 35%;
+            /* Sticky: Giúp cột này luôn bám theo khi cuộn trang */
+            position: sticky; 
+            top: 20px; 
+            height: fit-content;
+        }
+
+        /* CSS cho Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Chia 2 cột nhỏ trong form */
+            gap: 15px;
+        }
+
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #34495e; }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box; 
+        }
+
+        input:focus, select:focus { border-color: #3498db; outline: none; }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover { background-color: #2471a3; }
+
+        /* CSS cho Hộp Kết quả */
+        .result-box {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            border-top: 5px solid #27ae60; /* Viền xanh trên đầu */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .result-empty {
+            background-color: #ecf0f1;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: #95a5a6;
+            border: 2px dashed #bdc3c7;
+        }
+
+        .result-title { font-size: 18px; color: #7f8c8d; margin-bottom: 15px; }
+        .result-value { font-size: 32px; color: #c0392b; font-weight: bold; margin: 10px 0; }
+        .result-details { text-align: left; background: #f9f9f9; padding: 15px; border-radius: 5px; font-size: 13px; margin-top: 20px;}
+
+        /* Hiệu ứng hiện dần */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile: Khi màn hình nhỏ thì quay về xếp chồng dọc */
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .left-column, .right-column { width: 100%; flex: 100%; }
+            .right-column { position: static; order: -1; /* Đẩy kết quả lên trên cùng mobile */ }
+        }
+
+        .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🔍 Dự Đoán Khoản Vay </h1>
+        <p class="subtitle">Sử dụng thuật toán Decision Tree Classifier (Cây quyết định) để phân tích hồ sơ vay vốn </p>
+        <p class="subtitle">Nhập thông tin bên trái - Xem kết quả ngay bên phải</p>
+
+        <div class="main-layout">
+            
+            <div class="left-column">
+                <form action="{{ url_for('Loan_Application') }}" method="POST">
+                    <div class="form-grid">
+                        
+                        <div class="form-group">
+                            <label>Giới tính</label>
+                            <select name="genders_type" required>
+                                <option value="" disabled selected>-- Chọn --</option>
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tình trạng hôn nhân</label>
+                            <select name="marital_status" required>
+                                <option value="" disabled selected>-- Chọn --</option>
+                                <option value="YES">Đã kết hôn</option>
+                                <option value="NO">Độc thân</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Trình độ học vấn</label>
+                            <select name="education_status" required>
+                                <option value="" disabled selected>-- Chọn --</option>
+                                <option value="GRADUATED">Đã tốt nghiệp ĐH</option>
+                                <option value="NOT GRADUATED">Chưa tốt nghiệp</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Số người phụ thuộc</label>
+                            <select name="dependents" required>
+                                <option value="0">0 người</option>
+                                <option value="1">1 người</option>
+                                <option value="2">2 người</option>
+                                <option value="3+">Trên 3 người</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tự kinh doanh</label>
+                            <select name="self_employment" required>
+                                <option value="NO">Không</option>
+                                <option value="YES">Có</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Khu vực sinh sống</label>
+                            <select name="property_area" required>
+                                <option value="" disabled selected>-- Chọn --</option>
+                                <option value="URBAN">Thành thị</option>
+                                <option value="SEMIRURAL">Bán nông thôn</option>
+                                <option value="RURAL">Nông thôn</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Lịch sử tín dụng</label>
+                            <select name="credit_history" required>
+                                <option value="" disabled selected>-- Chọn --</option>
+                                <option value="1">Tốt (Đã trả đúng hạn)</option>
+                                <option value="0">Xấu (Từng bùng/trả chậm)</option>
+                            </select>
+                        </div>
+
+                         <div class="form-group" style="grid-column: span 2;">
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                            <label style="color: #2980b9;">Thông tin tài chính:</label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Thu nhập bản thân ($)</label>
+                            <input type="number" name="applicantIncome" min="0" required placeholder="5000">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Thu nhập đồng vay ($)</label>
+                            <input type="number" name="coapplicantIncome" min="0" value="0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Số tiền vay ($)</label>
+                            <input type="number" name="loan_amnt" min="0" required placeholder="1000">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Thời hạn (Ngày)</label>
+                            <input type="number" name="term_d" value="360" min="0" required>
+                        </div>
+
+                    </div> <button type="submit" class="btn-submit">PHÂN TÍCH HỒ SƠ</button>
+                </form>
+            </div>
+
+            <div class="right-column">
+                {% if result %}
+                    <div class="result-box">
+                        <div class="result-title">Kết quả Phân Tích</div>
+                        
+                        <div class="result-value">
+                            {{ result }}
+                        </div>
+
+                        <div class="result-details">
+                            <strong>Thông số đã nhập:</strong><br>
+                            {% for variable, value in original_input.items() %}
+                                <span style="color:#666">- {{ variable }}: <b>{{ value }}</b></span><br>
+                            {% endfor %}
+                        </div>
+                        
+                        <a href="/" style="display:block; margin-top:20px; text-decoration:none; color:#2980b9; font-size:14px;">↺ Làm mới</a>
+                    </div>
+                {% else %}
+                    <div class="result-empty">
+                        <h2 style="font-size: 40px; margin: 0;">🤖</h2>
+                        <p><strong>Chưa có dữ liệu</strong></p>
+                        <p style="font-size: 13px;">Vui lòng điền thông tin bên trái và nhấn nút "Phân Tích". AI sẽ hiển thị kết quả tại đây.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div> </div>
+
+    <div class="footer">
+        Student Project | Machine Learning Loan Prediction
+    </div>
+
+</body>
+</html>
